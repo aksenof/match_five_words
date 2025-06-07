@@ -135,6 +135,7 @@
   </div>
 
   <div class="controls">
+    <button onclick="openRules()">Правила игры</button>
     <button onclick="startGame()">Перезапустить игру</button>
     <button onclick="nextRound()">Следующий раунд</button>
   </div>
@@ -293,6 +294,10 @@
 
       // Скрываем правый блок
       hideRightBlock();
+    }
+
+    function openRules() {
+      window.open("https://github.com/aksenof/match_five_words/tree/main/rules", "_blank");
     }
 
     async function startGame() {
