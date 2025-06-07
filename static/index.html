@@ -296,7 +296,7 @@
     }
 
     async function startGame() {
-      const response = await fetch('http://localhost:8000/rounds');
+      const response = await fetch(`${window.location.origin}/rounds`);
       rounds = await response.json();
       roundIndex = 0;
       loadRound(roundIndex);
