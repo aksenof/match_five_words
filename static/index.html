@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Match Five Words</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .player-indicator {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .game-area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      margin-bottom: 20px;
+    }
+    .nouns-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .side-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .adjectives-drop {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card {
+      width: 150px;
+      height: 100px;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: move;
+    }
+    .card.dragging {
+      opacity: 0.5;
+    }
+    .drop-zone {
+      width: 150px;
+      height: 100px;
+      border: 2px dashed #999;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fafafa;
+    }
+    .hidden {
+      display: none;
+    }
+    .adjectives-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .correct {
+      background-color: #d4edda; /* светло-зелёный */
+      border-color: #28a745;
+    }
+    .incorrect {
+      background-color: #f8d7da; /* светло-красный */
+      border-color: #dc3545;
+    }
+    .controls {
+      margin-top: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Раунд <span id="round-number">1</span></h1>
+
+  <div id="player-indicator" class="player-indicator">Игрок №1</div>
+
+  <div class="game-area">
+
+    <div id="adjectives-player1" class="adjectives-row">
+      <!-- Карточки игрока 1 -->
+    </div>
+
+    <div class="side-column">
+      <div class="adjectives-drop" id="left-drop">
+        <div class="drop-zone" data-index="0"></div>
+        <div class="drop-zone" data-index="1"></div>
+        <div class="drop-zone" data-index="2"></div>
+        <div class="drop-zone" data-index="3"></div>
+        <div class="drop-zone" data-index="4"></div>
+      </div>
+    </div>
+
+    <div class="nouns-column" id="nouns">
+      <!-- Существительные -->
+    </div>
+
+    <div class="side-column">
+      <div class="adjectives-drop" id="right-drop">
+        <div class="drop-zone" data-index="0"></div>
+        <div class="drop-zone" data-index="1"></div>
+        <div class="drop-zone" data-index="2"></div>
+        <div class="drop-zone" data-index="3"></div>
+        <div class="drop-zone" data-index="4"></div>
+      </div>
+    </div>
+
+    <div id="adjectives-player2" class="adjectives-row">
+      <!-- Карточки игрока 2 -->
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <button onclick="startGame()">Перезапустить игру</button>
+    <button onclick="nextRound()">Следующий раунд</button>
+  </div>
+
+  <script>
+    let rounds = [];
+    let roundIndex = 0;
+    let currentRound = null;
+
+    function createCard(text, dropContainerId, isDraggable = true) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.textContent = text;
+      card.dropContainerId = dropContainerId;
+      if (isDraggable) {
+        card.setAttribute("draggable", "true");
+        card.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", text);
+          e.target.classList.add("dragging");
+        });
+        card.addEventListener("dragend", (e) => {
+          e.target.classList.remove("dragging");
+        });
+      }
+      return card;
+    }
+
+    function setupNouns(list) {
+      const nounColumn = document.getElementById("nouns");
+      list.forEach(noun => nounColumn.appendChild(createCard(noun, "nouns", false)));
+    }
+
+    function setupAdjectives(containerId, list, dropContainerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      list.forEach(adj => container.appendChild(createCard(adj, dropContainerId)));
+    }
+
+    function compareDrops() {
+      const leftZones = document.querySelectorAll("#left-drop .drop-zone");
+      const rightZones = document.querySelectorAll("#right-drop .drop-zone");
+
+      for (let i = 0; i < leftZones.length; i++) {
+        const leftText = leftZones[i].textContent.trim();
+        const rightText = rightZones[i].textContent.trim();
+
+        if (!leftText || !rightText) continue;
+
+        if (leftText === rightText) {
+          leftZones[i].classList.add("correct");
+          rightZones[i].classList.add("correct");
+        } else {
+          leftZones[i].classList.add("incorrect");
+          rightZones[i].classList.add("incorrect");
+        }
+      }
+    }
+
+    function hideRightBlock() {
+        document.getElementById("right-drop").classList.add("hidden");
+        document.getElementById("adjectives-player2").style.display = "none";
+    }
+
+    function showRightBlock() {
+        document.getElementById("right-drop").classList.remove("hidden");
+        document.getElementById("adjectives-player2").style.display = "flex";
+    }
+
+    function hideLeftBlock() {
+        document.getElementById("left-drop").classList.add("hidden");
+    }
+
+    function showLeftBlock() {
+        document.getElementById("left-drop").classList.remove("hidden");
+    }
+
+    function checkLeftDrop() {
+        if (document.getElementById("adjectives-player1").childElementCount === 0) {
+            hideLeftBlock();
+            showRightBlock();
+            document.getElementById("player-indicator").textContent = "Игрок №2";
+        }
+    }
+
+    function checkRightDrop() {
+       if (document.getElementById("adjectives-player2").childElementCount === 0) {
+           showLeftBlock();
+           compareDrops();
+           document.getElementById("player-indicator").textContent = "Результат";
+       }
+    }
+
+    function setupDrops(dropContainerId) {
+      const zones = document.querySelectorAll(`#${dropContainerId} .drop-zone`);
+      zones.forEach(zone => {
+        // Очищаем содержимое и классы
+        zone.textContent = "";
+        zone.classList.remove("correct", "incorrect");
+
+        // Устанавливаем дроп логику если она не установлена
+        if (!zone.dataset.initialized) {
+          zone.addEventListener("dragover", e => e.preventDefault());
+          zone.addEventListener("drop", e => {
+            e.preventDefault();
+            const data = e.dataTransfer.getData("text/plain");
+            zone.textContent = data;
+
+            // Удалить карточку после перемещения
+            const allCards = document.querySelectorAll(".card");
+            allCards.forEach(card => {
+              if (card.textContent === data) {
+                if (card.dropContainerId === dropContainerId) {
+                  card.remove();
+                  checkLeftDrop();
+                  checkRightDrop();
+                }
+              }
+            });
+          });
+          zone.dataset.initialized = "true";
+        }
+      });
+    }
+
+    function nextRound() {
+      if (roundIndex < rounds.length - 1) {
+        roundIndex++;
+        loadRound(roundIndex);
+      } else {
+        alert("Это был последний раунд!");
+      }
+    }
+
+    function clearBoard() {
+      document.getElementById("nouns").innerHTML = "";
+      document.getElementById("adjectives-player1").innerHTML = "";
+      document.getElementById("adjectives-player2").innerHTML = "";
+    }
+
+    function loadRound(index) {
+      clearBoard();
+      currentRound = rounds[index];
+      document.getElementById("round-number").textContent = currentRound.round_number;
+      document.getElementById("player-indicator").textContent = "Игрок №1";
+
+      // Загружаем существительные
+      setupNouns([...currentRound.nouns])
+
+      // Загружаем прилагательные
+      setupAdjectives("adjectives-player1", [...currentRound.adjectives], "left-drop");
+      setupAdjectives("adjectives-player2", [...currentRound.adjectives], "right-drop");
+
+      // Подготавливаем дроп-зоны
+      setupDrops("left-drop");
+      setupDrops("right-drop");
+
+      // Скрываем правый блок
+      hideRightBlock();
+    }
+
+    async function startGame() {
+      const response = await fetch('http://localhost:8000/rounds');
+      rounds = await response.json();
+      roundIndex = 0;
+      loadRound(roundIndex);
+    }
+
+    // автозапуск
+    startGame();
+  </script>
+</body>
+</html>

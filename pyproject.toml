@@ -1,0 +1,12 @@
+[project]
+name = "match_five_words"
+version = "1.0.0"
+description = "match_five_words"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi>=0.115.12",
+    "uvicorn>=0.34.2",
+    "uvloop>=0.21.0",
+]
