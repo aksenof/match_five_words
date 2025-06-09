@@ -91,6 +91,11 @@
       margin: 5px;
       font-size: 16px;
     }
+    button:disabled {
+      background-color: #ccc;
+      color: #666;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -137,7 +142,7 @@
   <div class="controls">
     <button onclick="openRules()">Правила игры</button>
     <button onclick="startGame()">Перезапустить игру</button>
-    <button onclick="nextRound()">Следующий раунд</button>
+    <button id="next-round-button" onclick="nextRound()" disabled>Следующий раунд</button>
   </div>
 
   <script>
@@ -212,6 +217,14 @@
         document.getElementById("left-drop").classList.remove("hidden");
     }
 
+    function disableNextRound() {
+      document.getElementById("next-round-button").disabled = true;
+    }
+
+    function enableNextRound() {
+      document.getElementById("next-round-button").disabled = false;
+    }
+
     function checkLeftDrop() {
         if (document.getElementById("adjectives-player1").childElementCount === 0) {
             hideLeftBlock();
@@ -225,6 +238,7 @@
            showLeftBlock();
            compareDrops();
            document.getElementById("player-indicator").textContent = "Результат";
+           enableNextRound();
        }
     }
 
@@ -240,6 +254,7 @@
           zone.addEventListener("dragover", e => e.preventDefault());
           zone.addEventListener("drop", e => {
             e.preventDefault();
+            if (zone.textContent.trim() !== "") return; // Запретить дроп карточки, если место уже занято
             const data = e.dataTransfer.getData("text/plain");
             zone.textContent = data;
 
@@ -291,9 +306,11 @@
       // Подготавливаем дроп-зоны
       setupDrops("left-drop");
       setupDrops("right-drop");
-
-      // Скрываем правый блок
+      showLeftBlock();
       hideRightBlock();
+
+      // Подготавливаем кнопки
+      disableNextRound();
     }
 
     function openRules() {
